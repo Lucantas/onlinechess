@@ -3,7 +3,6 @@ package chessmatch
 type movement struct {
 	data  []byte
 	match string
-	conn  *Client
 }
 
 // Hub represents basic server informations of the websocket
@@ -39,14 +38,14 @@ func (h *Hub) Run() {
 		case player := <-h.unregister:
 			if _, ok := h.Clients[player]; ok {
 				delete(h.Clients, player)
-				close(player.conn.Send)
+				close(player.Client.Send)
 			}
 		case movement := <-h.Movement:
 			for player := range h.Clients {
 				select {
-				case player.conn.Send <- movement.data:
+				case player.Client.Send <- movement.data:
 				default:
-					close(player.conn.Send)
+					close(player.Client.Send)
 					delete(h.Clients, player)
 				}
 			}

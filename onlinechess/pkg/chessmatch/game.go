@@ -27,18 +27,32 @@ type Client struct {
 }
 
 type player struct {
-	conn  *Client
-	match string
+	Client *Client
+	match  string
 }
 
 func (p *player) Read() {
 	// Starts webscoket connection
-
-	// close of the connection after the end of function
-
+	conn := p.Client.Conn
+	defer func() {
+		// close the connection after the end of function
+		p.Client.Hub.unregister <- p
+		conn.Close()
+	}()
 	// loop on the data
+	for {
+		_, move, err := conn.ReadMessage()
+		if err != nil {
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				log.Println("Error: ", err)
+			}
+			break
+		}
+		// process and pass the data trought the channel to the player
+		m := movement{move, p.match}
+		p.Client.Hub.Movement <- m
+	}
 
-	// pass the data trought the channel to the player
 }
 
 func (p *player) Write() {
