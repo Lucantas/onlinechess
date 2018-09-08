@@ -1,10 +1,5 @@
 package chessmatch
 
-type player struct {
-	conn  *Client
-	match string
-}
-
 type movement struct {
 	data  []byte
 	match string

@@ -26,6 +26,11 @@ type Client struct {
 	Send chan []byte
 }
 
+type player struct {
+	conn  *Client
+	match string
+}
+
 func (p *player) Read() {
 	// Starts webscoket connection
 
@@ -56,8 +61,8 @@ func socketHandler(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	client.Hub.register <- player
 	//match :=  r.URL.Query()["match"][0]
 
-	go player.Read()
 	go player.Write()
+	go player.Read()
 
 }
 
