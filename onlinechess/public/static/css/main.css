@@ -1,0 +1,29 @@
+section{
+    background: #212121;
+}
+.chessboard {
+    width:50%;
+    height: 90vh;
+    border: 25px solid #333;
+}
+.score{
+    background: lightgray;
+    width: 40%;
+    margin: 1.3em;
+}
+.black, .white{
+    width: 12.5%;
+    font-size:50px;
+    text-align:center;
+    line-height: 6vw;
+}
+.black {
+    background-color: #999;
+}
+.white {
+    background-color: #fff;
+}
+.row {
+  display: flex;
+  height: 5.32vw;
+}
