@@ -3,6 +3,7 @@ package chessmatch
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -56,14 +57,54 @@ func (p *player) Read() {
 }
 
 func (p *player) Write() {
-	// Starts a websocket connection
+	// Starts webscoket connection
+	conn := p.Client.Conn
+	ticker := time.NewTicker(15)
+	defer func() {
+		// close the connection after the end of function
+		ticker.Stop()
+		conn.Close()
+	}()
 
+	for {
+		select {
+		case movement, ok := <-p.Client.Send:
+			if !ok {
+				// The hub closed the channel.
+				conn.WriteMessage(websocket.CloseMessage, []byte{})
+				return
+			}
+
+			w, err := conn.NextWriter(websocket.TextMessage)
+			if err != nil {
+				return
+			}
+			log.Println(movement)
+			w.Write(movement)
+
+			// Add queued chat messages to the current websocket message.
+			n := len(p.Client.Send)
+			for i := 0; i < n; i++ {
+				w.Write(<-p.Client.Send)
+			}
+
+			if err := w.Close(); err != nil {
+				return
+			}
+		case <-ticker.C:
+			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				return
+			}
+		}
+	}
 	// process the data to be sent over the socket
 
 	// send the data to the player's room
 }
 
-func socketHandler(hub *Hub, w http.ResponseWriter, r *http.Request) {
+// SocketHandler handles the websocket connection between the client
+// and the server, trough the net/http package
+func SocketHandler(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
