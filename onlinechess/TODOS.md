@@ -1,4 +1,4 @@
-- Create the hub
+- Create the hub [X]
     - Create the socket based on the responseWriter, request and hub
 - Associate the local address
 - Wait for incoming connections from clients
