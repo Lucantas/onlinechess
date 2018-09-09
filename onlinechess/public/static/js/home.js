@@ -1,6 +1,7 @@
 window.onload = function(){
     var signin = document.getElementById("signin");
     var signup = document.getElementById("signup");
+    var guest = document.getElementById("guest");
 
     signin.onclick = function(){
         document.querySelectorAll("[data-transition=move-left]").forEach(function(item){
@@ -15,6 +16,5 @@ window.onload = function(){
           
         })
     }
-    
 }
 

@@ -36,7 +36,7 @@ window.onload = function () {
     }
     if (window["WebSocket"]) {
         var matchId = "nothing"
-        conn = new WebSocket("ws://" + document.location.host + "/ws?match=" + matchId);
+        conn = new WebSocket("ws://" + document.location.host + "/matchws");
         conn.onclose = function (evt) {
            console.log("Connection closed")
         };

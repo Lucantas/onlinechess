@@ -1,15 +1,20 @@
 package chessmatch
 
+import (
+	"log"
+	"math/rand"
+)
+
 type movement struct {
 	data  []byte
-	match string
+	match *match
 }
 
 // Hub represents basic server informations of the websocket
 // server, such as clients connected, games, movements.
 type Hub struct {
-	// Clients registered on the hub
-	Clients map[*player]bool
+	// Lobby holds the clients registered on the hub
+	Lobby map[*player]bool
 	// Games registered within the clients
 	Games map[string]map[*player]bool
 	// movement made by a Client
@@ -24,7 +29,7 @@ type Hub struct {
 func NewHub() *Hub {
 	return &Hub{
 		Movement:   make(chan movement),
-		Clients:    make(map[*player]bool),
+		Lobby:      make(map[*player]bool),
 		register:   make(chan *player),
 		unregister: make(chan *player),
 	}
@@ -34,19 +39,31 @@ func (h *Hub) Run() {
 	for {
 		select {
 		case player := <-h.register:
-			h.Clients[player] = true
+			h.Lobby[player] = true
+			for p := range h.Lobby {
+				if h.Lobby[p] && p != player {
+					log.Println("Found player on lobby")
+					rnd := rand.New(rand.NewSource(int64(p.Client.ID)))
+					m := newMatch(rnd.Int(), p, player)
+					p.match, player.match = m, m
+					log.Println(p.match, player.match)
+
+					p.Client.Send <- []byte("Match Found")
+					player.Client.Send <- []byte("Match Found")
+				}
+			}
 		case player := <-h.unregister:
-			if _, ok := h.Clients[player]; ok {
-				delete(h.Clients, player)
+			if _, ok := h.Lobby[player]; ok {
+				delete(h.Lobby, player)
 				close(player.Client.Send)
 			}
 		case movement := <-h.Movement:
-			for player := range h.Clients {
+			for player := range h.Lobby {
 				select {
 				case player.Client.Send <- movement.data:
 				default:
 					close(player.Client.Send)
-					delete(h.Clients, player)
+					delete(h.Lobby, player)
 				}
 			}
 		}

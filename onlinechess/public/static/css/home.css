@@ -27,14 +27,33 @@ body, html{
     align-items: center;
 }
 
+.flex {
+    display:flex;
+}
+
+.justify-center{
+    justify-content: center;
+}
+
 .login-panel .title{
     font-size:2.5em;
+}
+
+.buttons-flex{
+    display: flex;
+    justify-content: space-between;
+}
+
+.buttons-flex a {
+    text-decoration: none;
+    color:black;
 }
 
 .login-panel .button{
     border:none;
     background-color: #bdbdbd;
     padding: 0.5em 3.5em;
+    margin: 0 0.5em;
 }
 
 .login-panel .button:hover{

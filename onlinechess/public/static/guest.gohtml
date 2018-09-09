@@ -1,0 +1,40 @@
+{{ $rootPath := .}}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Online Chess</title>
+<link rel="stylesheet" href="{{$rootPath}}static/css/home.css">
+<link rel="stylesheet" href="{{$rootPath}}static/css/guest.css">
+<script type="text/javascript" src="{{$rootPath}}static/js/guest.js"></script>
+</head>
+    <body>
+        <section id="platform" class="login-panel">
+            <div id="welcomePanel" class="welcome">
+                    <div data-transition="move-left" class="center-pieces">
+                            <div class="black" data-piece="rook" data-id="a1">&#9820;</div>
+                            <div class="white" data-piece="knight" data-id="b1">&#9816;</div>
+                            <div class="black" data-piece="bishop" data-id="c1">&#9821;</div>
+                            <div class="white" data-piece="queen" data-id="d1">&#9813;</div>
+                            <div class="black" data-piece="king" data-id="e1">&#9818;</div>
+                            <div class="white" data-piece="bishop" data-id="f1">&#9815;</div>
+                            <div class="black" data-piece="knight" data-id="g1">&#9822;</div>
+                            <div class="white" data-piece="rook" data-id="h1">&#9814;</div>
+                    </div>
+                   <div data-transition="move-left" class="center-box">
+                        <h3 class="title">
+                            To proceed you must enter your username
+                        </h1>
+                        <form class="flex justify-center" action="/guest/register" method="POST">
+                            <div class="form-input">
+                                <input type="text" name="username" placeholder="username666" />
+                            </div>
+                            <button id="guest" data-action="/play/guest" class="button">
+                                Submit
+                            </button>
+                        </form>
+                    </div>
+            </div>
+        </section>
+    </body>
+    </html>

@@ -1,0 +1,11 @@
+img.responsive{
+    width:100%;
+}
+
+.welcome{
+    max-width: 430px;
+}
+
+.buttons-flex{
+    justify-content: center;
+}

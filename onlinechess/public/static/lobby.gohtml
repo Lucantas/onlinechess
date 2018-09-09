@@ -1,0 +1,39 @@
+{{ $rootPath := .}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Online Chess</title>
+<link rel="stylesheet" href="{{$rootPath}}static/css/home.css">
+<link rel="stylesheet" href="{{$rootPath}}static/css/lobby.css">
+<script type="text/javascript" src="{{$rootPath}}static/js/lobby.js"></script>
+</head>
+    <body>
+        <section id="platform" class="login-panel">
+            <div id="welcomePanel" class="welcome">
+                    <div data-transition="move-left" class="center-pieces">
+                            <div class="black" data-piece="rook" data-id="a1">&#9820;</div>
+                            <div class="white" data-piece="knight" data-id="b1">&#9816;</div>
+                            <div class="black" data-piece="bishop" data-id="c1">&#9821;</div>
+                            <div class="white" data-piece="queen" data-id="d1">&#9813;</div>
+                            <div class="black" data-piece="king" data-id="e1">&#9818;</div>
+                            <div class="white" data-piece="bishop" data-id="f1">&#9815;</div>
+                            <div class="black" data-piece="knight" data-id="g1">&#9822;</div>
+                            <div class="white" data-piece="rook" data-id="h1">&#9814;</div>
+                    </div>
+                   <div data-transition="move-left" class="center-box">
+                        <h1 class="title">
+                            We're matching you with another player, this might take a few seconds
+                        </h1>
+                        <div class="buttons-flex">
+                            <img class="responsive" src="{{$rootPath}}static/img/gif/loading.gif" alt="spining circle">
+                        </div>
+                        <div class="buttons-flex">
+                            <a href="/guest/unregister" class="button">
+                                Cancelar
+                            </a>
+                        </div>
+                    </div>
+            </div>
+        </section>
+    </body>
+    </html>

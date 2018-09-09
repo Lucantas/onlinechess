@@ -2,39 +2,97 @@ package main
 
 import (
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
 	"websockets/onlinechess/pkg/chessmatch"
 )
 
-func serveHome(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	http.ServeFile(w, r, "./public/static/home.html")
+var (
+	address = fmt.Sprintf("http://%s:%s/", os.Getenv("HOST"), os.Getenv("PORT"))
+	tpl     = &template.Template{}
+)
+
+func init() {
+	tpl = template.Must(template.ParseGlob("./public/static/*.gohtml"))
 }
 
-func serveMatch(w http.ResponseWriter, r *http.Request) {
+func home(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	http.ServeFile(w, r, "./public/static/chess.html")
+
+	if err := tpl.ExecuteTemplate(w, "home.gohtml", address); err != nil {
+		log.Println("Error: ", err)
+	}
+	//http.ServeFile(w, r, "./public/static/home.html")
+}
+
+func match(w http.ResponseWriter, r *http.Request) {
+	_, err := r.Cookie("session")
+	if err != nil {
+		http.Redirect(w, r, "/guest/play", http.StatusSeeOther)
+	}
+	if r.Method != "GET" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if err := tpl.ExecuteTemplate(w, "chess.gohtml", address); err != nil {
+		log.Println("Error: ", err)
+	}
+}
+
+func registerGuest(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	user := r.FormValue("username")
+	if user == " " || user == "" {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+	_, err := r.Cookie("session")
+	if err != nil {
+		newSession(w, user)
+	}
+	http.Redirect(w, r, "/guest/play", http.StatusSeeOther)
+}
+
+func handleGuest(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	// Test if user got cookies
+	if _, err := r.Cookie("session"); err != nil {
+		// if user have no cookie defined, open the guest template to input the username
+		if err := tpl.ExecuteTemplate(w, "guest.gohtml", address); err != nil {
+			log.Println("Error: ", err)
+		}
+	} else {
+		// if user a cookie, open the lobby template while a match is being found
+		if err := tpl.ExecuteTemplate(w, "lobby.gohtml", address); err != nil {
+			log.Println("Error: ", err)
+		}
+	}
 }
 
 func main() {
-	dir, err := os.Getwd()
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println(dir)
 	hub := chessmatch.NewHub()
 	go hub.Run()
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./public/static/"))))
-	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		chessmatch.SocketHandler(hub, w, r)
+	http.HandleFunc("/", home)
+	http.HandleFunc("/match", match)
+	http.HandleFunc("/guest/register", registerGuest)
+	http.HandleFunc("/guest/play", handleGuest)
+	http.HandleFunc("/matchws", func(w http.ResponseWriter, r *http.Request) {
+		chessmatch.GameSocket(hub, w, r)
+	})
+	http.HandleFunc("/lobbyws", func(w http.ResponseWriter, r *http.Request) {
+		chessmatch.LobbySocket(hub, w, r)
 	})
 	addr := fmt.Sprintf("%s:%s", os.Getenv("HOST"), os.Getenv("PORT"))
 	log.Fatal(http.ListenAndServe(addr, nil))
