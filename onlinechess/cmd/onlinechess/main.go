@@ -85,7 +85,7 @@ func main() {
 	go hub.Run()
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./public/static/"))))
 	http.HandleFunc("/", home)
-	http.HandleFunc("/match", match)
+	http.HandleFunc("/guest/match", match)
 	http.HandleFunc("/guest/register", registerGuest)
 	http.HandleFunc("/guest/play", handleGuest)
 	http.HandleFunc("/matchws", func(w http.ResponseWriter, r *http.Request) {

@@ -46,10 +46,10 @@ func (h *Hub) Run() {
 					rnd := rand.New(rand.NewSource(int64(p.Client.ID)))
 					m := newMatch(rnd.Int(), p, player)
 					p.match, player.match = m, m
-					log.Println(p.match, player.match)
-
 					p.Client.Send <- []byte("Match Found")
 					player.Client.Send <- []byte("Match Found")
+					h.Lobby[p] = false
+					h.Lobby[player] = false
 				}
 			}
 		case player := <-h.unregister:

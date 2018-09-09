@@ -7,8 +7,8 @@ window.onload = function(){
         conn.onmessage = function (evt) {
             var resp = evt.data;
             console.log(resp)
-            if (resp.message == "Match Found") {
-                window.location.href = "/match";
+            if (resp == "Match Found") {
+                window.location.href = "/guest/match";
             }
         };
     } else {
