@@ -36,11 +36,12 @@ window.onload = function () {
     }
     if (window["WebSocket"]) {
         var matchId = "nothing"
-        conn = new WebSocket("ws://" + document.location.host + "/matchws");
+        conn = new WebSocket("ws://" + document.location.host + "/lobbyws");
         conn.onclose = function (evt) {
            console.log("Connection closed")
         };
         conn.onmessage = function (evt) {
+            console.log(evt.data);
             var piece = JSON.parse(evt.data);
             console.log(piece.id, piece.piece)
             if (document.querySelector(`[data-id=${piece.next}][data-piece=${piece.piece}]`) != null){

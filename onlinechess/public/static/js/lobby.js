@@ -12,8 +12,6 @@ window.onload = function(){
             }
         };
     } else {
-        var item = document.createElement("div");
-        item.innerHTML = "<b>Your browser does not support WebSockets.</b>";
-        document.innerHTML = item;
+        document.innerHTML = "<b>Your browser does not support WebSockets.</b>";
     }
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	uuid "github.com/satori/go.uuid"
 )
 
 const (
@@ -33,8 +34,9 @@ var (
 
 // Client represents a client who asked for a connection
 type Client struct {
-	ID  uint
-	Hub *Hub
+	ID     uint
+	Cookie string
+	Hub    *Hub
 
 	//the match name
 	match string
@@ -53,10 +55,11 @@ type player struct {
 
 // match is the actual game, aggregating two players, a name and a Id
 type match struct {
-	ID      uint
-	Name    string
-	Player1 *player
-	Player2 *player
+	ID       uint
+	Name     string
+	Player1  *player
+	Player2  *player
+	Movement chan *movement
 }
 
 func (p *player) FindMatch() {
@@ -69,7 +72,6 @@ func (p *player) FindMatch() {
 	}()
 	for {
 		_, message, err := conn.ReadMessage()
-		log.Println("message:", message)
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Println("Error: ", err)
@@ -77,8 +79,9 @@ func (p *player) FindMatch() {
 			break
 		}
 		// process and pass the data trought the channel to the player
+		log.Println("match: ", p.match)
 		m := movement{message, p.match}
-		p.Client.Hub.Movement <- m
+		p.Client.Hub.Messages <- m.data
 	}
 
 }
@@ -105,7 +108,8 @@ func (p *player) Read() {
 		}
 		// process and pass the data trought the channel to the player
 		m := movement{move, p.match}
-		p.Client.Hub.Movement <- m
+		//p.Client.Hub.Movement <- m
+		log.Println(m)
 	}
 
 }
@@ -119,9 +123,7 @@ func (p *player) Write() {
 		ticker.Stop()
 		conn.Close()
 	}()
-
 	for {
-		log.Println("on write")
 		select {
 		case movement, ok := <-p.Client.Send:
 			conn.SetWriteDeadline(time.Now().Add(writeWait))
@@ -160,9 +162,10 @@ func (p *player) Write() {
 
 func newMatch(id int, p1 *player, p2 *player) *match {
 	m := &match{
-		ID:      uint(id),
-		Player1: p1,
-		Player2: p2,
+		ID:       uint(id),
+		Player1:  p1,
+		Player2:  p2,
+		Movement: make(chan *movement),
 	}
 	return m
 }
@@ -179,23 +182,41 @@ func GameSocket(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	player.Client.Hub.register <- player
 	//match :=  r.URL.Query()["match"][0]
 
-	go player.Write()
-	go player.Read()
+	//go player.Write()
+	//go player.Read()
 
+}
+
+func newCookie(w http.ResponseWriter) *http.Cookie {
+	id, err := uuid.NewV4()
+	if err != nil {
+		log.Println("Error: ", err)
+	}
+	cookie := &http.Cookie{
+		Name:     "session",
+		Value:    id.String(),
+		HttpOnly: false,
+		Path:     "/",
+		Expires:  time.Now().Add(time.Hour * 72),
+	}
+	return cookie
 }
 
 // LobbySocket handles the connection between the client and the
 // lobby on the server, enabling the user to find an opponent
-func LobbySocket(hub *Hub, w http.ResponseWriter, r *http.Request) {
+func LobbySocket(hub *Hub, cookie *http.Cookie, w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 	player := newPlayer(hub, conn, "match")
+	log.Println(cookie)
+	player.Client.Cookie = cookie.Value
 	player.Client.Hub.register <- player
 
 	go player.Write()
+	go player.Read()
 	go player.FindMatch()
 }
 

@@ -18,6 +18,30 @@ func init() {
 	tpl = template.Must(template.ParseGlob("./public/static/*.gohtml"))
 }
 
+func main() {
+	hub := chessmatch.NewHub()
+	go hub.Run()
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./public/static/"))))
+	http.HandleFunc("/", home)
+	http.HandleFunc("/guest/match", match)
+	http.HandleFunc("/guest/register", registerGuest)
+	http.HandleFunc("/guest/play", handleGuest)
+	http.HandleFunc("/matchws", func(w http.ResponseWriter, r *http.Request) {
+		chessmatch.GameSocket(hub, w, r)
+	})
+	http.HandleFunc("/lobbyws", func(w http.ResponseWriter, r *http.Request) {
+		cookie, err := r.Cookie("session")
+		if err != nil {
+			log.Println("no cookie")
+			http.Redirect(w, r, "/guest/play", http.StatusSeeOther)
+		}
+		chessmatch.LobbySocket(hub, cookie, w, r)
+	})
+	addr := fmt.Sprintf("%s:%s", os.Getenv("HOST"), os.Getenv("PORT"))
+	log.Fatal(http.ListenAndServe(addr, nil))
+
+}
+
 func home(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -54,10 +78,11 @@ func registerGuest(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
-	_, err := r.Cookie("session")
+	cookie, err := r.Cookie("session")
 	if err != nil {
 		newSession(w, user)
 	}
+	log.Println(cookie)
 	http.Redirect(w, r, "/guest/play", http.StatusSeeOther)
 }
 
@@ -73,28 +98,9 @@ func handleGuest(w http.ResponseWriter, r *http.Request) {
 			log.Println("Error: ", err)
 		}
 	} else {
-		// if user a cookie, open the lobby template while a match is being found
+		// if user have a cookie, open the lobby template while a match is being searched
 		if err := tpl.ExecuteTemplate(w, "lobby.gohtml", address); err != nil {
 			log.Println("Error: ", err)
 		}
 	}
-}
-
-func main() {
-	hub := chessmatch.NewHub()
-	go hub.Run()
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./public/static/"))))
-	http.HandleFunc("/", home)
-	http.HandleFunc("/guest/match", match)
-	http.HandleFunc("/guest/register", registerGuest)
-	http.HandleFunc("/guest/play", handleGuest)
-	http.HandleFunc("/matchws", func(w http.ResponseWriter, r *http.Request) {
-		chessmatch.GameSocket(hub, w, r)
-	})
-	http.HandleFunc("/lobbyws", func(w http.ResponseWriter, r *http.Request) {
-		chessmatch.LobbySocket(hub, w, r)
-	})
-	addr := fmt.Sprintf("%s:%s", os.Getenv("HOST"), os.Getenv("PORT"))
-	log.Fatal(http.ListenAndServe(addr, nil))
-
 }
